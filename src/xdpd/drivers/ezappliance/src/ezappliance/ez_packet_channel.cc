@@ -13,7 +13,7 @@
 #include <rofl/datapath/pipeline/switch_port.h>
 #include <rofl/common/utils/c_logger.h>
 #include <rofl/datapath/pipeline/openflow/openflow1x/pipeline/of1x_pipeline.h>
-#include <rofl/datapath/afa/openflow/openflow1x/of1x_cmm.h>
+#include <rofl/datapath/hal/openflow/openflow1x/of1x_cmm.h>
 #include "../io/datapacket_storage.h"
 #include "../io/bufferpool.h" 
 #include "../ls_internal_state.h"
@@ -201,7 +201,7 @@ void ez_packet_channel::put_packet_to_pipeline(datapacket_t* pkt) {
                         pkt_x86->get_buffer(),
                         pkt_x86->get_buffer_length(),
                         pkt_x86->get_buffer_length(), 
-                        pkt->matches.of1x) == AFA_FAILURE)
+                        pkt->matches.of1x) == HAL_FAILURE)
                 ROFL_ERR("[EZ-packet-channel] Sending a frame to pipeline unsuccessful\n");
         else
                 ROFL_DEBUG("[EZ-packet-channel] Sending a frame to pipeline successful\n");

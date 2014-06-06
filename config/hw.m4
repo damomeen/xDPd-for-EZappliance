@@ -58,6 +58,12 @@ if( test "$HW" = "example");then
 	PLATFORM=example
 	AC_CONFIG_SUBDIRS([src/xdpd/drivers/example])
 fi
+if( test "$HW" = "ezappliance");then
+	msg="$msg EZappliance"
+	AC_DEFINE(HW_EZAPPLIANCE)
+	PLATFORM=ezappliance
+	AC_CONFIG_SUBDIRS([src/xdpd/drivers/ezappliance])
+fi
 #[+]Add your platform here...
 
 if test -z $PLATFORM; then
