@@ -14,12 +14,11 @@
 #include "../io/bufferpool.h"
 #include "../io/datapacketx86.h"
 #include "../io/datapacket_storage.h"
-#include "../processing/ls_internal_state.h"
+#include "../ls_internal_state.h"
 
 using namespace xdpd::gnu_linux;
 
-#define BUCKETS_PER_LS 16
-#define DUMMY_BUF_SIZE 128
+#define BUCKETS_PER_LS 10
 #define ITERATIONS_PER_ROUND 2
 
 int pktin_not_pipe[2];
@@ -32,12 +31,11 @@ static inline void process_sw_of1x_packet_ins(of1x_switch_t* sw){
 	datapacket_t* pkt;
 	datapacketx86* pkt_x86;
 	hal_result_t rv;
-	storeid id;
-	static char null_buf[DUMMY_BUF_SIZE];
-	static unsigned int pending_to_read=0;
+	storeid id;	
+	char null_buf[BUCKETS_PER_LS];
 	
 	//Recover platform state
-	switch_platform_state_t* ls_int = (switch_platform_state_t*)sw->platform_state;
+	struct logical_switch_internals* ls_int = (struct logical_switch_internals*)sw->platform_state;
 
 	//Try to process up to BUCKETS_PER_LS packet-ins
 	for(i=0;i<BUCKETS_PER_LS;++i){
@@ -55,15 +53,15 @@ static inline void process_sw_of1x_packet_ins(of1x_switch_t* sw){
 		id = ls_int->storage->store_packet(pkt);
 
 		if(id == datapacket_storage::ERROR){
-			ROFL_DEBUG(DRIVER_NAME"[pkt-in-dispatcher] PKT_IN for packet(%p) could not be stored in the storage. Dropping..\n",pkt);
+			ROFL_DEBUG("PKT_IN for packet(%p) could not be stored in the storage. Dropping..\n",pkt);
 	
 			//Return to the bufferpool
 			bufferpool::release_buffer(pkt);
 			continue;
 		}
-
+			
 		//Process packet in
-        	rv = hal_cmm_process_of1x_packet_in(sw, 
+        	rv = hal_cmm_process_of1x_packet_in(sw->dpid, 
 						pkt_x86->pktin_table_id, 	
 						pkt_x86->pktin_reason, 	
 						pkt_x86->in_port, 
@@ -72,19 +70,12 @@ static inline void process_sw_of1x_packet_ins(of1x_switch_t* sw){
 						pkt_x86->pktin_send_len,
 						pkt_x86->get_buffer_length(),
 						&pkt->matches
-						);
+                        );
 
-		if( unlikely(rv != HAL_SUCCESS) ){
-			ROFL_DEBUG(DRIVER_NAME"[pkt-in-dispatcher] PKT_IN for packet(%p) could not be sent to sw:%s controller. Dropping..\n",pkt,sw->name);
+		if(rv != HAL_SUCCESS){
+			ROFL_DEBUG("PKT_IN for packet(%p) could not be sent to sw:%s controller. Dropping..\n",pkt,sw->name);
 			//Take packet out from the storage
-			if( unlikely(ls_int->storage->get_packet(id) != pkt) ){
-				ROFL_ERR(DRIVER_NAME"[pkt-in-dispatcher] Storage corruption. get_packet(%u) returned a different pkt pointer (should have been %p)\n", id, pkt);
-
-				assert(0);
-			}
-
-			//Return to datapacket_storage
-			ls_int->storage->get_packet(id);
+			pkt = ls_int->storage->get_packet(id);
 
 			//Return to the bufferpool
 			bufferpool::release_buffer(pkt);
@@ -92,20 +83,9 @@ static inline void process_sw_of1x_packet_ins(of1x_switch_t* sw){
 		
 	}
 
-	//Empty pipe
-	pending_to_read += i;
-
-	if( pending_to_read > 0 ){
-
-		if(pending_to_read > DUMMY_BUF_SIZE){
-			ret = read(pktin_not_pipe[PKT_IN_PIPE_READ], &null_buf, DUMMY_BUF_SIZE);
-		}else{
-			ret = read(pktin_not_pipe[PKT_IN_PIPE_READ], &null_buf, pending_to_read);
-		}
-
-		if(ret > 0)
-			pending_to_read -= ret; 
-	}
+	//Empty pipe (n tokens)
+	ret = read(pktin_not_pipe[PKT_IN_PIPE_READ], &null_buf,i);
+	(void)ret;
 }
 
 //Initialize pkt in notification pipe
@@ -151,28 +131,5 @@ void process_packet_ins(){
 				}
 			}
 		}
-	}
-}
-
-
-void drain_packet_ins(of_switch_t* sw){
-	
-	datapacket_t* pkt;
-	switch_platform_state_t* ls_int;
- 
-	if(!sw)
-		assert(0);
-		
-	//Recover platform state
-	ls_int = (switch_platform_state_t*)sw->platform_state;
-
-	//Let the pending pkt_ins to be drained
-	while(ls_int->pkt_in_queue->size() != 0){
-
-		pkt = ls_int->pkt_in_queue->non_blocking_read();
-	
-		//Return to the bufferpool
-		if(pkt)
-			bufferpool::release_buffer(pkt);
 	}
 }
