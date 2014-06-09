@@ -2,10 +2,10 @@ MAINTAINERCLEANFILES = Makefile.in
 
 SUBDIRS = src test 
 
-noinst_LTLIBRARIES = libfwd_module_ezappliance.la
+noinst_LTLIBRARIES = libxdpd_driver_ezappliance.la
 
-libfwd_module_ezappliance_la_SOURCES = 
+libxdpd_driver_ezappliance_la_SOURCES = 
 
-libfwd_module_ezappliance_la_LIBADD = \
-		src/libfwd_module_gnu_linux_src.la -lomniORB4 -lomnithread -lomniDynamic4
+libxdpd_driver_ezappliance_la_LIBADD = \
+		src/libxdpd_driver_gnu_linux_src.la -lomniORB4 -lomnithread -lomniDynamic4
 	

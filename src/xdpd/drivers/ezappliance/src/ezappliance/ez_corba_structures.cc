@@ -80,40 +80,40 @@ rofl_result_t set_ez_struct_key(of1x_flow_entry_t* entry, Proxy_Adapter::EZvalue
                         //        break;
                         case OF1X_MATCH_ETH_DST:
                                 //ROFL_DEBUG("Match: eth dst is present\n");
-                                set_mac(key.dst_mac, curr_match->value->value.u64);
-                                set_mac(mask.dst_mac, curr_match->value->mask.u64); 
+                                set_mac(key.dst_mac, of1x_get_match_value64(curr_match));
+                                set_mac(mask.dst_mac, of1x_get_match_mask64(curr_match)); 
                                 key_generated = ROFL_SUCCESS;
                                 break;
                         case OF1X_MATCH_ETH_SRC:
                                 //ROFL_DEBUG("Match: eth src is present\n");
-                                set_mac(key.src_mac, curr_match->value->value.u64);
-                                set_mac(mask.src_mac, curr_match->value->mask.u64); 
+                                set_mac(key.src_mac, of1x_get_match_value64(curr_match));
+                                set_mac(mask.src_mac, of1x_get_match_mask64(curr_match)); 
                                 key_generated = ROFL_SUCCESS;
                                 break;
                         case OF1X_MATCH_ETH_TYPE:
                                 //ROFL_DEBUG("Match: eth type is %d\n", curr_match->value->value.u16);
-                                key.ether_type = curr_match->value->value.u16;
-                                mask.ether_type = curr_match->value->mask.u16;
+                                key.ether_type = of1x_get_match_value16(curr_match);
+                                mask.ether_type = of1x_get_match_mask16(curr_match);
                                 key_generated = ROFL_SUCCESS;
                                 break;
                         case OF1X_MATCH_VLAN_VID:
-                                if ((curr_match->value->value.u16 & set_bit_u16(EZ_BIT_VLAN_TAG_FLAG)) == 0) { //handling the second use-case from OF1.3 Table 3 (page 45)
+                                if ((of1x_get_match_value16(curr_match) & set_bit_u16(EZ_BIT_VLAN_TAG_FLAG)) == 0) { //handling the second use-case from OF1.3 Table 3 (page 45)
                                         mask.vlan_tag |= set_bit_u16(EZ_BIT_VLAN_TAG_FLAG);
                                 } 
                                 else { //handling the fourth use-case from OF1.3 Table 3 (page 45)
                                         ROFL_DEBUG("\t\t Match: VLAN flag is set (VLAN present)\n");
                                         key.vlan_tag |= set_bit_u16(EZ_BIT_VLAN_TAG_FLAG);
                                         mask.vlan_tag |= set_bit_u16(EZ_BIT_VLAN_TAG_FLAG);
-                                        key.vlan_tag |= curr_match->value->value.u16 & 0xFFF; //FIXME: this should not happen for the third use-case
-                                        mask.vlan_tag |= curr_match->value->mask.u16 & 0xFFF; //FIXME: this should not happen for the third use-case
+                                        key.vlan_tag |= of1x_get_match_value16(curr_match) & 0xFFF; //FIXME: this should not happen for the third use-case
+                                        mask.vlan_tag |= of1x_get_match_mask16(curr_match) & 0xFFF; //FIXME: this should not happen for the third use-case
                                 }
                                 //ROFL_DEBUG("Match: VLAN ID is %d with mask 0x%x\n", curr_match->value->value.u16 & 0xFFF, curr_match->value->mask.u16 & 0xFFF);
                                 key_generated = ROFL_SUCCESS;
                                 break;
                         case OF1X_MATCH_VLAN_PCP:
                                 //ROFL_DEBUG("Match: VLAN PCP is %d with mask 0x%x\n", curr_match->value->value.u8, curr_match->value->mask.u8);
-                                key.vlan_tag = curr_match->value->value.u8 << (EZ_BIT_VLAN_TAG_FLAG+1);
-                                mask.vlan_tag = curr_match->value->mask.u8 << (EZ_BIT_VLAN_TAG_FLAG+1);
+                                key.vlan_tag = of1x_get_match_value8(curr_match) << (EZ_BIT_VLAN_TAG_FLAG+1);
+                                mask.vlan_tag = of1x_get_match_mask8(curr_match) << (EZ_BIT_VLAN_TAG_FLAG+1);
                                 key_generated = ROFL_SUCCESS;
                                 break;
                          //case OF1X_MATCH_NW_PROTO:
@@ -127,40 +127,40 @@ rofl_result_t set_ez_struct_key(of1x_flow_entry_t* entry, Proxy_Adapter::EZvalue
                          case OF1X_MATCH_NW_PROTO:  //problematich in case of ARP match
                          case OF1X_MATCH_IP_PROTO:
                                 //ROFL_DEBUG("Match: IP protocol is %d with mask 0x%x\n", curr_match->value->value.u8, curr_match->value->mask.u8);
-                                key.ip_protocol = curr_match->value->value.u8;
-                                mask.ip_protocol = curr_match->value->mask.u8;
+                                key.ip_protocol = of1x_get_match_value8(curr_match);
+                                mask.ip_protocol = of1x_get_match_mask8(curr_match);
                                 key_generated = ROFL_SUCCESS;
                                 break;  
                          case OF1X_MATCH_IPV4_SRC:
                          case OF1X_MATCH_NW_SRC:
                          case OF1X_MATCH_ARP_SPA:
                                 //ROFL_DEBUG("Match: IPv4 source address is %d with mask 0x%x\n", curr_match->value->value.u32, curr_match->value->mask.u32);
-                                key.src_ipv4 = curr_match->value->value.u32;
-                                mask.src_ipv4 = curr_match->value->mask.u32;
+                                key.src_ipv4 = of1x_get_match_value32(curr_match);
+                                mask.src_ipv4 = of1x_get_match_mask32(curr_match);
                                 key_generated = ROFL_SUCCESS;
                                 break;  
                          case OF1X_MATCH_IPV4_DST:
                          case OF1X_MATCH_NW_DST:
                          case OF1X_MATCH_ARP_TPA:
                                 //ROFL_DEBUG("Match: IPv4 destination address is %d with mask 0x%x\n", curr_match->value->value.u32, curr_match->value->mask.u32);
-                                key.dst_ipv4 = curr_match->value->value.u32;
-                                mask.dst_ipv4 = curr_match->value->mask.u32;
+                                key.dst_ipv4 = of1x_get_match_value32(curr_match);
+                                mask.dst_ipv4 = of1x_get_match_mask32(curr_match);
                                 key_generated = ROFL_SUCCESS;
                                 break;     
                          case OF1X_MATCH_TP_SRC:
                          case OF1X_MATCH_TCP_SRC:
                          case OF1X_MATCH_UDP_SRC:
                                 //ROFL_DEBUG("Match: TCP/UDP source port is %d with mask 0x%x\n", curr_match->value->value.u16, curr_match->value->mask.u16);
-                                key.tp_src_port = curr_match->value->value.u16;
-                                mask.tp_src_port = curr_match->value->mask.u16;
+                                key.tp_src_port = of1x_get_match_value16(curr_match);
+                                mask.tp_src_port = of1x_get_match_mask16(curr_match);
                                 key_generated = ROFL_SUCCESS;
                                 break;     
                          case OF1X_MATCH_TP_DST:
                          case OF1X_MATCH_TCP_DST:
                          case OF1X_MATCH_UDP_DST:
                                 //ROFL_DEBUG("Match: TCP/UDP destination port is %d with mask 0x%x\n", curr_match->value->value.u16, curr_match->value->mask.u16);
-                                key.tp_dst_port = curr_match->value->value.u16;
-                                mask.tp_dst_port = curr_match->value->mask.u16;
+                                key.tp_dst_port = of1x_get_match_value16(curr_match);
+                                mask.tp_dst_port = of1x_get_match_mask16(curr_match);
                                 key_generated = ROFL_SUCCESS;
                                 break;                                                 
                         default:
@@ -187,11 +187,11 @@ rofl_result_t check_if_match_list_empty(of1x_flow_entry_t* entry) {
         
         while (curr_match) {
                 //ROFL_DEBUG("Match type is %d\n", curr_match->type);
-                if(curr_match->value->type == UTERN8_T && curr_match->value->value.u8 != 0)
+                if(curr_match->__tern->type == UTERN8_T && curr_match->__tern->value.u8 != 0)
                         return ROFL_FAILURE;
-                if(curr_match->value->type == UTERN16_T && curr_match->value->value.u16 != 0)
+                if(curr_match->__tern->type == UTERN16_T && curr_match->__tern->value.u16 != 0)
                         return ROFL_FAILURE;
-                if(curr_match->value->type == UTERN32_T && curr_match->value->value.u32 != 0)
+                if(curr_match->__tern->type == UTERN32_T && curr_match->__tern->value.u32 != 0)
                         return ROFL_FAILURE;
                 curr_match = curr_match->next;
         }
@@ -371,13 +371,13 @@ rofl_result_t set_ez_struct_result(of1x_flow_entry_t* entry, Proxy_Adapter::EZva
                         case OF1X_AT_SET_FIELD_UDP_DST:
                                 break;
                         case OF1X_AT_OUTPUT:
-                                if (action->field.u64 == (uint64_t)OF1X_PORT_ALL) {
+                                if (of1x_get_packet_action_field64(action) == (uint64_t)OF1X_PORT_ALL) {
                                         result.actions = set_bit_u8(EZ_BIT_FORWARD_ALL_PORTS);
                                         ROFL_DEBUG("\t\t EZ action: forward to all ports\n");
                                 }
                                 else {
                                         result.actions = set_bit_u8(EZ_BIT_FORWARD_SINGLE_PORT);
-                                        result.port_number = (uint8_t)action->field.u64-1; // EZ port numbering starts from 0, OF numbering starts from 1
+                                        result.port_number = (uint8_t)of1x_get_packet_action_field64(action)-1; // EZ port numbering starts from 0, OF numbering starts from 1
                                         ROFL_DEBUG("\t\t EZ action: forward to port %d\n", result.port_number);
                                 }
                                 result_generated = ROFL_SUCCESS;

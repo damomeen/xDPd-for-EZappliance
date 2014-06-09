@@ -1,11 +1,11 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-noinst_LTLIBRARIES = libfwd_module_gnu_linux_ezappliance.la
+noinst_LTLIBRARIES = libxdpd_driver_gnu_linux_ezappliance.la
 
-libfwd_module_gnu_linux_ezappliance_ladir = $(includedir)/drivers/ezappliance/ezappliance
+libxdpd_driver_gnu_linux_ezappliance_ladir = $(includedir)/drivers/ezappliance/ezappliance
 
-libfwd_module_gnu_linux_ezappliance_la_HEADERS =
-libfwd_module_gnu_linux_ezappliance_la_SOURCES = \
+libxdpd_driver_gnu_linux_ezappliance_la_HEADERS =
+libxdpd_driver_gnu_linux_ezappliance_la_SOURCES = \
 	ez_packet_channel.cc \
 	ez_packet_channel.h  \
 	ez_corba_client.cc \

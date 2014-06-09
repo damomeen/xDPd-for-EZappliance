@@ -50,11 +50,11 @@
 using namespace xdpd::gnu_linux;
 
 /*
-* @name    driver_init
+* @name    hal_driver_init
 * @brief   Initializes driver. Before using the HAL_DRIVER routines, higher layers must allow driver to initialize itself
 * @ingroup driver_management
 */
-hal_result_t driver_init(){
+hal_result_t hal_driver_init(const char* extra_params){
 
 	ROFL_INFO("[AFA] Initializing EZappliance forwarding module...\n");
         
@@ -95,11 +95,11 @@ void hal_driver_get_info(driver_info_t* info){
 }
 
 /*
-* @name    driver_destroy
+* @name    hal_driver_destroy
 * @brief   Destroy driver state. Allows platform state to be properly released. 
 * @ingroup driver_management
 */
-hal_result_t driver_destroy(){
+hal_result_t hal_driver_destroy(){
     
     ROFL_DEBUG("[AFA] driver_destroy\n");
 
@@ -166,34 +166,37 @@ of_switch_snapshot_t* hal_driver_get_switch_snapshot_by_dpid(uint64_t dpid){
 }
 
 /*
-* @name    driver_create_switch 
+* @name    hal_driver_create_switch 
 * @brief   Instruct driver to create an OF logical switch 
 * @ingroup logical_switch_management
 * @retval  Pointer to of_switch_t instance 
 */
-of_switch_t* driver_create_switch(char* name, uint64_t dpid, of_version_t of_version, unsigned int num_of_tables, int* ma_list){
+hal_result_t hal_driver_create_switch(char* name, uint64_t dpid, of_version_t of_version, unsigned int num_of_tables, int* ma_list){
 	
         ROFL_DEBUG("[AFA] driver_create_switch (name: %s, dpid: %d, tables: %d)\n", name, dpid, num_of_tables);
 	of_switch_t* sw;
 	
 	sw = (of_switch_t*)of1x_init_switch(name, of_version, dpid, num_of_tables, (enum of1x_matching_algorithm_available*) ma_list);
 	
+    if(unlikely(!sw))
+        return HAL_FAILURE;
+        
 	//Add switch to the bank	
 	physical_switch_add_logical_switch(sw);
-        // Add switch (with pipeline) to EZ-packet-channel
-        
+    
+    // Add switch (with pipeline) to EZ-packet-channel
 	set_lsw_for_ez_packet_channel(sw);
-	return sw;
+	return HAL_SUCCESS;
 }
 
 
 /*
-* @name    driver_get_switch_by_dpid 
+* @name    hal_driver_get_switch_by_dpid 
 * @brief   Retrieve the switch with the specified dpid  
 * @ingroup logical_switch_management
 * @retval  Pointer to of_switch_t instance or NULL 
 */
-of_switch_t* driver_get_switch_by_dpid(uint64_t dpid){
+of_switch_t* hal_driver_get_switch_by_dpid(uint64_t dpid){
 	
         ROFL_DEBUG("[AFA] driver_init (dpid: %d)\n", dpid);
 	//Call directly the bank
@@ -205,7 +208,7 @@ of_switch_t* driver_get_switch_by_dpid(uint64_t dpid){
 * @brief   Instructs the driver to destroy the switch with the specified dpid 
 * @ingroup logical_switch_management
 */
-hal_result_t driver_destroy_switch_by_dpid(const uint64_t dpid){
+hal_result_t hal_driver_destroy_switch_by_dpid(const uint64_t dpid){
 
         ROFL_DEBUG("[AFA] driver_destroy_switch_by_dpid (dpid: %d)\n", dpid);
 	unsigned int i;
@@ -290,7 +293,7 @@ switch_port_snapshot_t* hal_driver_get_port_snapshot_by_num(uint64_t dpid, unsig
 
 
 /*
-* @name    driver_attach_physical_port_to_switch
+* @name    hal_driver_attach_physical_port_to_switch
 * @brief   Attemps to attach a system's port to switch, at of_port_num if defined, otherwise in the first empty OF port number.
 * @ingroup management
 *
@@ -298,7 +301,7 @@ switch_port_snapshot_t* hal_driver_get_port_snapshot_by_num(uint64_t dpid, unsig
 * @param name Port name (system's name)
 * @param of_port_num If *of_port_num is non-zero, try to attach to of_port_num of the logical switch, otherwise try to attach to the first available port and return the result in of_port_num
 */
-hal_result_t driver_attach_port_to_switch(uint64_t dpid, const char* name, unsigned int* of_port_num){
+hal_result_t hal_driver_attach_port_to_switch(uint64_t dpid, const char* name, unsigned int* of_port_num){
 
         ROFL_DEBUG("[AFA] driver_attach_port_to_switch (dpid: %d, name: %s)\n", dpid, name);
     
@@ -340,14 +343,14 @@ hal_result_t driver_attach_port_to_switch(uint64_t dpid, const char* name, unsig
 }
 
 /**
-* @name    driver_connect_switches
+* @name    hal_driver_connect_switches
 * @brief   Attemps to connect two logical switches via a virtual port. Forwarding module may or may not support this functionality. 
 * @ingroup management
 *
 * @param dpid_lsi1 Datapath ID of the LSI1
 * @param dpid_lsi2 Datapath ID of the LSI2 
 */
-hal_result_t driver_connect_switches(uint64_t dpid_lsi1, switch_port_t** port1, uint64_t dpid_lsi2, switch_port_t** port2){
+hal_result_t hal_driver_connect_switches(uint64_t dpid_lsi1, switch_port_t** port1, uint64_t dpid_lsi2, switch_port_t** port2){
 
         ROFL_DEBUG("[AFA] driver_connect_switches (dpid_1: %d, dpid_2: %d)\n", dpid_lsi1, dpid_lsi2);
 	of_switch_t *lsw1, *lsw2;
@@ -366,14 +369,14 @@ hal_result_t driver_connect_switches(uint64_t dpid_lsi1, switch_port_t** port1, 
 }
 
 /*
-* @name    driver_detach_port_from_switch
+* @name    hal_driver_detach_port_from_switch
 * @brief   Detaches a port from the switch 
 * @ingroup port_management
 *
 * @param dpid Datapath ID of the switch to detach the ports
 * @param name Port name (system's name)
 */
-hal_result_t driver_detach_port_from_switch(uint64_t dpid, const char* name){
+hal_result_t hal_driver_detach_port_from_switch(uint64_t dpid, const char* name){
 
         ROFL_DEBUG("[AFA] driver_detach_port_from_switch (dpid: %d, name: %s)\n", dpid, name);
 	of_switch_t* lsw;
@@ -413,14 +416,14 @@ hal_result_t driver_detach_port_from_switch(uint64_t dpid, const char* name){
 
 
 /*
-* @name    driver_detach_port_from_switch_at_port_num
+* @name    hal_driver_detach_port_from_switch_at_port_num
 * @brief   Detaches port_num of the logical switch identified with dpid 
 * @ingroup port_management
 *
 * @param dpid Datapath ID of the switch to detach the ports
 * @param of_port_num Number of the port (OF number) 
 */
-hal_result_t driver_detach_port_from_switch_at_port_num(uint64_t dpid, const unsigned int of_port_num){
+hal_result_t hal_driver_detach_port_from_switch_at_port_num(uint64_t dpid, const unsigned int of_port_num){
 
         ROFL_DEBUG("[AFA] driver_detach_port_from_switch_at_port_num (dpid: %d, port: %d)\n", dpid, of_port_num);
 	of_switch_t* lsw;
@@ -433,7 +436,7 @@ hal_result_t driver_detach_port_from_switch_at_port_num(uint64_t dpid, const uns
 	if(!of_port_num || of_port_num >= LOGICAL_SWITCH_MAX_LOG_PORTS || !lsw->logical_ports[of_port_num].port)
 		return HAL_FAILURE;
 
-	return driver_detach_port_from_switch(dpid, lsw->logical_ports[of_port_num].port->name);
+	return hal_driver_detach_port_from_switch(dpid, lsw->logical_ports[of_port_num].port->name);
 }
 
 
@@ -444,7 +447,7 @@ hal_result_t driver_detach_port_from_switch_at_port_num(uint64_t dpid, const uns
 */
 
 /*
-* @name    driver_enable_port
+* @name    hal_driver_enable_port
 * @brief   Brings up a system port. If the port is attached to an OF logical switch, this also schedules port for I/O and triggers PORTMOD message. 
 * @ingroup port_management
 *
@@ -473,7 +476,7 @@ hal_result_t hal_driver_bring_port_up(const char* name){
 }
 
 /*
-* @name    driver_disable_port
+* @name    hal_driver_disable_port
 * @brief   Shutdowns (brings down) a system port. If the port is attached to an OF logical switch, this also de-schedules port and triggers PORTMOD message. 
 * @ingroup port_management
 *
@@ -503,7 +506,7 @@ hal_result_t hal_driver_bring_port_down(const char* name){
 }
 
 /*
-* @name    driver_enable_port_by_num
+* @name    hal_driver_enable_port_by_num
 * @brief   Brings up a port from an OF logical switch (and the underlying physical interface). This function also triggers the PORTMOD message 
 * @ingroup port_management
 *
@@ -533,7 +536,7 @@ hal_result_t hal_driver_bring_port_up_by_num(uint64_t dpid, unsigned int port_nu
 }
 
 /*
-* @name    driver_disable_port_by_num
+* @name    hal_driver_disable_port_by_num
 * @brief   Brings down a port from an OF logical switch (and the underlying physical interface). This also triggers the PORTMOD message.
 * @ingroup port_management
 *
@@ -590,7 +593,7 @@ monitoring_snapshot_state_t* hal_driver_get_monitoring_snapshot(uint64_t rev){
  * @param count
  * @return
  */
-hal_result_t driver_list_matching_algorithms(of_version_t of_version, const char * const** name_list, int *count){
+hal_result_t hal_driver_list_matching_algorithms(of_version_t of_version, const char * const** name_list, int *count){
         ROFL_DEBUG("[AFA] driver_list_matching_algorithms\n");
 	return (hal_result_t)of_get_switch_matching_algorithms(of_version, name_list, count);
 }

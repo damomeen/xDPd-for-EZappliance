@@ -90,7 +90,13 @@ datapacket_t* ez_packet_channel::read() {
         uint32_t frame_size;	    
 
         //Allocate free buffer	
-        pkt = bufferpool::get_free_buffer();
+        pkt = bufferpool::get_free_buffer_nonblocking();
+    
+        if(!pkt) {
+            ROFL_ERR("[EZ-packet-channel] No buffer allocated for the packet!\n");
+			return NULL;
+        }
+        
         pkt_x86 = ((datapacketx86*)pkt->platform_state);
 
         //Copy something from TCP socket to buffer
@@ -190,10 +196,8 @@ void ez_packet_channel::put_packet_to_pipeline(datapacket_t* pkt) {
         
         storeid storage_id = storage->store_packet(pkt);
 
-        __of1x_init_packet_matches(pkt); 
-
         if(hal_cmm_process_of1x_packet_in(
-                        (of1x_switch*)logical_switch,
+                        logical_switch->dpid,
                         pkt_x86->pktin_table_id,
                         pkt_x86->pktin_reason,
                         pkt_x86->in_port,
@@ -201,7 +205,7 @@ void ez_packet_channel::put_packet_to_pipeline(datapacket_t* pkt) {
                         pkt_x86->get_buffer(),
                         pkt_x86->get_buffer_length(),
                         pkt_x86->get_buffer_length(), 
-                        pkt->matches.of1x) == HAL_FAILURE)
+                        &(pkt->matches)) == HAL_FAILURE)
                 ROFL_ERR("[EZ-packet-channel] Sending a frame to pipeline unsuccessful\n");
         else
                 ROFL_DEBUG("[EZ-packet-channel] Sending a frame to pipeline successful\n");
