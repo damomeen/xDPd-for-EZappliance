@@ -63,13 +63,13 @@ void port_manager::bring_up(std::string& name){
 		pthread_mutex_unlock(&port_manager::mutex);
 		throw ePmInvalidPort();
 	}
-ROFL_DEBUG("2\n");
+    
 	result = hal_driver_bring_port_up(name.c_str());ROFL_DEBUG("3\n");
 	pthread_mutex_unlock(&port_manager::mutex);
-ROFL_DEBUG("4\n");
+
 	if(result != HAL_SUCCESS)
 	       throw ePmUnknownError();
-ROFL_DEBUG("5\n");
+    
 	//Redundant, the driver should inform us about the change of state in the port
 	ROFL_DEBUG("[xdpd][port_manager] Port %s brought administratively up\n", name.c_str());
 }
