@@ -330,10 +330,10 @@ rofl_result_t set_ez_struct_result(of1x_flow_entry_t* entry, Proxy_Adapter::EZva
         of1x_packet_action_t* action;
   
         //If entry has not actions we are done (should we really install it down there?)
-        if(!entry->inst_grp.instructions[OF1X_IT_APPLY_ACTIONS-1].apply_actions)
+        if(!entry->inst_grp.instructions[OF1X_IT_APPLY_ACTIONS].apply_actions)
                 return ROFL_FAILURE;
 
-        action = entry->inst_grp.instructions[OF1X_IT_APPLY_ACTIONS-1].apply_actions->head;
+        action = entry->inst_grp.instructions[OF1X_IT_APPLY_ACTIONS].apply_actions->head;
         
         if(!action){
                 ROFL_DEBUG("\t\t EZ action: action list empty\n");
@@ -343,7 +343,6 @@ rofl_result_t set_ez_struct_result(of1x_flow_entry_t* entry, Proxy_Adapter::EZva
 
         //Loop over apply actions only
         for(; action; action = action->next) {
-         
                 switch(action->type){
 
                         case OF1X_AT_SET_FIELD_ETH_DST: 
@@ -371,13 +370,13 @@ rofl_result_t set_ez_struct_result(of1x_flow_entry_t* entry, Proxy_Adapter::EZva
                         case OF1X_AT_SET_FIELD_UDP_DST:
                                 break;
                         case OF1X_AT_OUTPUT:
-                                if (of1x_get_packet_action_field64(action) == (uint64_t)OF1X_PORT_ALL) {
+                                if (of1x_get_packet_action_field32(action) == (uint64_t)OF1X_PORT_ALL) {
                                         result.actions = set_bit_u8(EZ_BIT_FORWARD_ALL_PORTS);
                                         ROFL_DEBUG("\t\t EZ action: forward to all ports\n");
                                 }
                                 else {
                                         result.actions = set_bit_u8(EZ_BIT_FORWARD_SINGLE_PORT);
-                                        result.port_number = (uint8_t)of1x_get_packet_action_field64(action)-1; // EZ port numbering starts from 0, OF numbering starts from 1
+                                        result.port_number = (uint8_t)of1x_get_packet_action_field32(action)-1; // EZ port numbering starts from 0, OF numbering starts from 1
                                         ROFL_DEBUG("\t\t EZ action: forward to port %d\n", result.port_number);
                                 }
                                 result_generated = ROFL_SUCCESS;
