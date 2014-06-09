@@ -21,7 +21,7 @@ namespace gnu_linux {
 class ez_packet_channel{
 
 public:
-	ez_packet_channel();
+	ez_packet_channel(const char* ezproxy_ip);
 	virtual ~ez_packet_channel();
 
 	virtual datapacket_t* read(void);
@@ -32,6 +32,7 @@ public:
         
         // logical switch contains OF pipeline
         of_switch_t* logical_switch;
+        char ezproxy_ip_address[50];
 
 protected:
     
@@ -45,7 +46,7 @@ protected:
 }// namespace xdpd
 
 
-rofl_result_t launch_ez_packet_channel();
+rofl_result_t launch_ez_packet_channel(const char* ezproxy_ip_address);
 rofl_result_t stop_ez_packet_channel();
 
 // retieve a single existing instance of EZ packet channel

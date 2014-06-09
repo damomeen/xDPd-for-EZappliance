@@ -43,8 +43,8 @@
 #define EZ_DESC \
 "EZappliance driver.\n\nEZappliance driver is controlling EZchip NP-3 network processor based programmable devices."
 
-#define EZ_USAGE  "" //We don't support extra params
-#define EZ_EXTRA_PARAMS "" //We don't support extra params
+#define EZ_USAGE  "EZ Proxy IP address required" 
+#define EZ_EXTRA_PARAMS "EZ Proxy IP address" 
 
 
 using namespace xdpd::gnu_linux;
@@ -57,6 +57,7 @@ using namespace xdpd::gnu_linux;
 hal_result_t hal_driver_init(const char* extra_params){
 
 	ROFL_INFO("[AFA] Initializing EZappliance forwarding module...\n");
+    ROFL_INFO("[AFA] Extra params is %s\n", extra_params);
         
 	//Init the ROFL-PIPELINE phyisical switch
 	if(physical_switch_init() != ROFL_SUCCESS)
@@ -66,7 +67,8 @@ hal_result_t hal_driver_init(const char* extra_params){
 	bufferpool::init();
         
         //Initialize packet channel to EZ
-        if(launch_ez_packet_channel() != ROFL_SUCCESS){
+        // extra_params contains IP address of EZ Proxy
+        if(launch_ez_packet_channel(extra_params) != ROFL_SUCCESS){
                 return HAL_FAILURE;
         }
         
@@ -306,6 +308,7 @@ hal_result_t hal_driver_attach_port_to_switch(uint64_t dpid, const char* name, u
         ROFL_DEBUG("[AFA] driver_attach_port_to_switch (dpid: %d, name: %s)\n", dpid, name);
     
 	switch_port_t* port;
+    switch_port_snapshot_t* port_snapshot;
 	of_switch_t* lsw;
 
 	//Check switch existance
@@ -335,7 +338,8 @@ hal_result_t hal_driver_attach_port_to_switch(uint64_t dpid, const char* name, u
 	}
 
 	//notify port attached
-	if(hal_cmm_notify_port_add(port)!=HAL_SUCCESS){
+    port_snapshot = physical_switch_get_port_snapshot(port->name);
+	if(hal_cmm_notify_port_add(port_snapshot)!=HAL_SUCCESS){
 		//return HAL_FAILURE; //Ignore
 	}
 	
@@ -381,6 +385,7 @@ hal_result_t hal_driver_detach_port_from_switch(uint64_t dpid, const char* name)
         ROFL_DEBUG("[AFA] driver_detach_port_from_switch (dpid: %d, name: %s)\n", dpid, name);
 	of_switch_t* lsw;
 	switch_port_t* port;
+    switch_port_snapshot_t* port_snapshot;
 	
 	lsw = physical_switch_get_logical_switch_by_dpid(dpid);
 	if(!lsw)
@@ -396,7 +401,8 @@ hal_result_t hal_driver_detach_port_from_switch(uint64_t dpid, const char* name)
 		return HAL_FAILURE;
 	
 	//notify port dettached
-	if(hal_cmm_notify_port_delete(port) != HAL_SUCCESS){
+    port_snapshot = physical_switch_get_port_snapshot(port->name);
+	if(hal_cmm_notify_port_delete(port_snapshot) != HAL_SUCCESS){
 		///return HAL_FAILURE; //ignore
 	}
 

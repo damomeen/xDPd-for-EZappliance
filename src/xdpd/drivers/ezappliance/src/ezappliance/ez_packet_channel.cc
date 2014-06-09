@@ -28,7 +28,8 @@ static bool ez_continue_execution = true;
 static ez_packet_channel* ez_packet_channel_instance = NULL;
 
 //Constructor and destructor
-ez_packet_channel::ez_packet_channel() {
+ez_packet_channel::ez_packet_channel(const char* ezproxy_ip) {
+    strncpy(this->ezproxy_ip_address, ezproxy_ip, sizeof(this->ezproxy_ip_address));
 }
 
 ez_packet_channel::~ez_packet_channel() {
@@ -62,15 +63,16 @@ int ez_packet_channel::connect_to_ezproxy_packet_interface() {
 
         dest_addr.sin_family = AF_INET; // host byte order
         dest_addr.sin_port = htons(EZ_PORT); // destination port
-        dest_addr.sin_addr.s_addr = inet_addr(EZ_IP); // destination address
+        dest_addr.sin_addr.s_addr = inet_addr("10.134.0.4"); // destination address
+        //dest_addr.sin_addr.s_addr = inet_addr(this->ezproxy_ip_address); // destination address
         memset(&(dest_addr.sin_zero), '\0', 8); 
 
         /* Now connect to the server */
         if (connect(sockfd,(struct sockaddr*) & dest_addr, sizeof(struct sockaddr)) < 0) {
-                ROFL_ERR("[EZ-packet-channel] Couldn't connect to %s:%d, errno(%d): %s\n", EZ_IP, EZ_PORT, errno, strerror(errno));
+                ROFL_ERR("[EZ-packet-channel] Couldn't connect to %s:%d, errno(%d): %s\n", this->ezproxy_ip_address, EZ_PORT, errno, strerror(errno));
                 return -1;
         }   
-        ROFL_INFO("[EZ-packet-channel] Connected to %s:%d\n", EZ_IP, EZ_PORT);
+        ROFL_INFO("[EZ-packet-channel] Connected to %s:%d\n", this->ezproxy_ip_address, EZ_PORT);
 
         char msg[] = "Testing message to server!";
 
@@ -251,12 +253,12 @@ static void* ez_packet_channel_routine(void* param) {
 /**
 * launches the thread
 */
-rofl_result_t launch_ez_packet_channel() {
+rofl_result_t launch_ez_packet_channel(const char* ezproxy_ip_address) {
         
         //Set flag
         ez_continue_execution = true;
 
-        ez_packet_channel_instance = new ez_packet_channel();
+        ez_packet_channel_instance = new ez_packet_channel(ezproxy_ip_address);
         if(pthread_create(&ez_thread, NULL, ez_packet_channel_routine, ez_packet_channel_instance)<0){
                 ROFL_ERR("[EZ-packet-channel] pthread_create failed, errno(%d): %s\n", errno, strerror(errno));
                 return ROFL_FAILURE;
