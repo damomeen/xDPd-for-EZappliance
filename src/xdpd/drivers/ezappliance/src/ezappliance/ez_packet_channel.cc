@@ -63,8 +63,7 @@ int ez_packet_channel::connect_to_ezproxy_packet_interface() {
 
         dest_addr.sin_family = AF_INET; // host byte order
         dest_addr.sin_port = htons(EZ_PORT); // destination port
-        dest_addr.sin_addr.s_addr = inet_addr("10.134.0.4"); // destination address
-        //dest_addr.sin_addr.s_addr = inet_addr(this->ezproxy_ip_address); // destination address
+        dest_addr.sin_addr.s_addr = inet_addr(this->ezproxy_ip_address); // destination address
         memset(&(dest_addr.sin_zero), '\0', 8); 
 
         /* Now connect to the server */
