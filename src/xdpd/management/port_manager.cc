@@ -58,7 +58,6 @@ void port_manager::bring_up(std::string& name){
 	//inconvenient interlacing of notifications in case of concurrency.
 	pthread_mutex_lock(&port_manager::mutex);
 
-    ROFL_DEBUG("1 %s\n", name.c_str());
 	//Check port existance
 	if(!port_exists(name)){
 		pthread_mutex_unlock(&port_manager::mutex);
